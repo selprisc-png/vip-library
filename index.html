@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CAHÓBA Cátedras VIP</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0b0510">
+    
+    <!-- Librerías de Texto, PDF, 3D y ZIP -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        /* TEMA EJECUTIVO GLAMUROSO (VIOLETA PROFUNDO Y ORO) */
+        :root {
+            --bg-app: #0b0510;      
+            --accent-main: #d4af37; 
+            --shelf-bg: #1d0f2b;    
+            --shelf-shadow: #0a040e;
+        }
+        body {
+            background-color: var(--bg-app);
+            color: #e0d5f5;
+            font-family: 'Georgia', serif; 
+            margin: 0; padding: 0;
+            min-height: 100vh;
+        }
+        
+        header {
+            background-color: rgba(18, 9, 26, 0.95);
+            padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #3a1e54;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            flex-wrap: wrap; gap: 15px;
+        }
+        header h1 { 
+            margin: 0; font-size: 24px; color: var(--accent-main); 
+            font-family: 'Segoe UI', sans-serif; letter-spacing: 3px; text-transform: uppercase; 
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
+        }
+        
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+
+        .btn-action {
+            background: linear-gradient(135deg, #3a1e54, #1d0f2b);
+            color: white; border: 1px solid #5a327d; padding: 8px 18px; border-radius: 4px;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px;
+            font-family: 'Segoe UI', sans-serif; transition: all 0.2s;
+        }
+        .btn-action:hover { transform: translateY(-2px); border-color: var(--accent-main); box-shadow: 0 5px 15px rgba(90, 50, 125, 0.5); }
+        .btn-gold { background: linear-gradient(135deg, #d4af37, #997a00); color: #0b0510; border: none; }
+        .btn-gold:hover { box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4); }
+        
+        #file-input { display: none; }
+
+        .container { padding: 30px; max-width: 1200px; margin: 0 auto; }
+        
+        .toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; border-bottom: 1px solid #3a1e54; padding-bottom: 10px;
+        }
+        .toolbar h3 { color: var(--accent-main); font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; margin: 0; }
+        .filter-select {
+            background-color: #1d0f2b; color: #e0d5f5; border: 1px solid #5a327d;
+            padding: 8px 15px; border-radius: 4px; font-family: 'Segoe UI', sans-serif; outline: none; cursor: pointer;
+        }
+
+        .grid-shelf { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 25px; 
+            padding: 25px 20px 0px 20px; background-color: var(--shelf-bg);
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.6) 100%);
+            border-bottom: 20px solid var(--shelf-shadow); box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+            border-radius: 4px; align-items: end; min-height: 200px;
+        }
+
+        .book-card {
+            background-color: #2a1b38; border-radius: 2px 8px 8px 2px; padding: 15px 10px; 
+            height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            border-left: 8px solid #120a17; box-shadow: -4px 0px 15px rgba(0,0,0,0.6);
+            margin-bottom: -2px; cursor: pointer; transition: transform 0.2s; position: relative;
+        }
+        .book-card:hover { transform: translateY(-10px); border-color: var(--accent-main); }
+        .book-card.type-pdf { background-color: #4a1c38; border-left-color: #260a1a; }
+
+        .book-icon { font-size: 42px; margin-bottom: 12px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .book-title { 
+            font-size: 13px; text-align: center; color: #f0e6d2; 
+            font-family: 'Segoe UI', sans-serif; font-weight: bold;
+            overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        }
+
+        .empty-msg {
+            grid-column: 1 / -1; text-align: center; color: #7a5c99; 
+            font-family: 'Segoe UI', sans-serif; padding-bottom: 30px; font-style: italic;
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 200;
+        }
+        .action-modal {
+            background-color: #1d0f2b; border: 1px solid var(--accent-main);
+            border-radius: 8px; padding: 25px; width: 90%; max-width: 340px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.9); text-align: center; font-family: 'Segoe UI', sans-serif;
+        }
+        .action-modal h3 { margin-top: 0; color: var(--accent-main); font-size: 18px; margin-bottom: 20px; }
+        .modal-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s;}
+        .btn-read { background-color: #3a1e54; color: white; border: 1px solid #5a327d; }
+        .btn-read:hover { background-color: #5a327d; }
+        .btn-delete { background-color: transparent; color: #d9534f; border: 1px solid #d9534f; }
+        .btn-delete:hover { background-color: rgba(217, 83, 79, 0.1); }
+
+        /* --- LECTOR 3D Y PANTALLA COMPLETA --- */
+        #reader-view {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(5, 2, 8, 0.98); z-index: 1000;
+            display: none; flex-direction: column;
+        }
+
+        .reader-header {
+            background-color: #120a17; padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #3a1e54; font-family: 'Segoe UI', sans-serif;
+        }
+        .reader-title { color: var(--accent-main); font-weight: bold; font-size: 18px; letter-spacing: 1px; }
+        
+        .reader-controls { display: flex; gap: 15px; align-items: center; }
+        
+        .theme-controls { display: flex; gap: 8px; align-items: center; border-right: 1px solid #3a1e54; padding-right: 15px; }
+        .theme-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #5a327d; cursor: pointer; }
+        .theme-btn.claro { background-color: #ffffff; }
+        .theme-btn.sepia { background-color: #fdf6e3; }
+        .theme-btn.violeta { background-color: #1d0f2b; border-color: var(--accent-main); }
+
+        .btn-icon { background: transparent; border: none; color: #e0d5f5; font-size: 20px; cursor: pointer; padding: 0 5px; }
+        .btn-icon:hover { color: var(--accent-main); }
+        
+        .btn-close { background: transparent; color: #d9534f; border: 1px solid #d9534f; padding: 6px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 10px; }
+
+        .reader-workspace {
+            flex-grow: 1; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; position: relative;
+        }
+
+        .flipbook-viewport { 
+            display: flex; justify-content: center; align-items: center; 
+            width: 100%; height: 100%; user-select: none; 
+        }
+        
+        /* LA MAGIA DEL TAMAÑO OCURRE AQUÍ */
+        .flipbook { 
+            display: none; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9); 
+            transform-origin: center center; /* Se ancla al centro para crecer */
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Animación fluida de lupa */
+        }
+
+        #reader-view[data-read-theme="claro"] .page { background-color: #ffffff; color: #111111; }
+        #reader-view[data-read-theme="sepia"] .page { background-color: #fdf6e3; color: #2c1e16; }
+        #reader-view[data-read-theme="violeta"] .page { background-color: #1d0f2b; color: #e0d5f5; box-shadow: inset 0 0 40px rgba(0,0,0,0.8); }
+
+        .page {
+            overflow: hidden; box-sizing: border-box; 
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        .page-text { 
+            padding: 40px; font-size: 16px; line-height: 1.6; text-align: justify; 
+            -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+        }
+        
+        .page-pdf { padding: 0; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+        
+        .pdf-img { 
+            max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;
+            pointer-events: none; -webkit-user-drag: none; user-select: none; 
+        }
+        #reader-view[data-read-theme="violeta"] .pdf-img { filter: invert(0.85) hue-rotate(220deg); mix-blend-mode: normal; }
+
+        #loader { display: none; position: absolute; color: var(--accent-main); font-family: 'Segoe UI', sans-serif; font-weight: bold; font-size: 18px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+        
+        @media (max-width: 800px) { 
+            .btn-action span { display: none; } 
+            .reader-header { flex-direction: column; gap: 15px; }
+            .theme-controls { border-right: none; padding-right: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CAHÓBA VIP</h1>
+        <div class="header-actions">
+            <button class="btn-action" onclick="descargarZIP()">
+                📦 <span>Respaldar (.zip)</span>
+            </button>
+            <button class="btn-action btn-gold" onclick="document.getElementById('file-input').click()">
+                ➕ <span>Subir Archivo</span>
+            </button>
+            <input type="file" id="file-input" accept=".md,.txt,.pdf" multiple>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="toolbar">
+            <h3>Archivos Ejecutivos</h3>
+            <select class="filter-select" id="filter-select" onchange="mostrarLibros()">
+                <option value="todos">👁️ Mostrar Todos</option>
+                <option value="textos">📔 Solo Cuadernos (.txt/.md)</option>
+                <option value="pdfs">📕 Solo Documentos (.pdf)</option>
+            </select>
+        </div>
+        <div class="grid-shelf" id="library-container"></div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="action-modal" onclick="closeModal(event)">
+        <div class="action-modal" onclick="event.stopPropagation()">
+            <h3 id="modal-book-title">Título</h3>
+            <button class="modal-btn btn-read" onclick="startReading()">📖 Abrir Cátedra</button>
+            <button class="modal-btn btn-delete" onclick="borrarLibro()">🗑️ Destruir Archivo</button>
+        </div>
+    </div>
+
+    <!-- LECTOR -->
+    <div id="reader-view" data-read-theme="violeta">
+        <div class="reader-header">
+            <div class="reader-title" id="reader-title">Título del Libro</div>
+            <div class="reader-controls">
+                <div class="theme-controls">
+                    <button class="theme-btn claro" onclick="setTheme('claro')" title="Claro"></button>
+                    <button class="theme-btn sepia" onclick="setTheme('sepia')" title="Sepia"></button>
+                    <button class="theme-btn violeta" onclick="setTheme('violeta')" title="Violeta Ejecutivo"></button>
+                </div>
+                <button class="btn-icon" onclick="toggleFullScreen()" title="Pantalla Completa">⛶</button>
+                <button class="btn-close" onclick="cerrarLibro()">✖ Cerrar</button>
+            </div>
+        </div>
+        <div class="reader-workspace">
+            <div id="loader">Desempaquetando archivos...</div>
+            <div class="flipbook-viewport">
+                <div class="flipbook" id="flipbook"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        const savedTheme = localStorage.getItem('cahoba_theme_vip') || 'violeta';
+        document.getElementById('reader-view').setAttribute('data-read-theme', savedTheme);
+        function setTheme(theme) {
+            document.getElementById('reader-view').setAttribute('data-read-theme', theme);
+            localStorage.setItem('cahoba_theme_vip', theme);
+        }
+
+        // CONTROL PANTALLA COMPLETA
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // BASE DE DATOS
+        let db;
+        const dbRequest = indexedDB.open("CahobaVIP_DB", 3); 
+        dbRequest.onupgradeneeded = e => {
+            db = e.target.result;
+            if (!db.objectStoreNames.contains("libros")) {
+                db.createObjectStore("libros", { keyPath: "id", autoIncrement: true });
+            }
+        };
+        dbRequest.onsuccess = e => { db = e.target.result; mostrarLibros(); };
+
+        document.getElementById('file-input').addEventListener('change', async function(e) {
+            for (let file of this.files) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                const titulo = file.name.replace(`.${ext}`, '');
+                
+                if (ext === 'pdf') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    guardarEnBD({ titulo: titulo, tipo: 'pdf', data: arrayBuffer, extensionOriginal: ext });
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = function(evento) {
+                        const contenido = evento.target.result || "Archivo vacío";
+                        guardarEnBD({ titulo: titulo, tipo: 'texto', data: contenido, extensionOriginal: ext });
+                    };
+                    reader.readAsText(file);
+                }
+            }
+            this.value = ''; 
+        });
+
+        function guardarEnBD(libro) {
+            const transaccion = db.transaction(["libros"], "readwrite");
+            transaccion.objectStore("libros").add(libro);
+            transaccion.oncomplete = () => { mostrarLibros(); };
+        }
+
+        function mostrarLibros() {
+            const contenedor = document.getElementById('library-container');
+            const filtroActual = document.getElementById('filter-select').value;
+
+            db.transaction(["libros"], "readonly").objectStore("libros").getAll().onsuccess = e => {
+                const libros = e.target.result;
+                contenedor.innerHTML = ''; 
+                if(libros.length === 0) {
+                    contenedor.innerHTML = '<div class="empty-msg">Tu estantería ejecutiva está vacía.</div>';
+                    return;
+                }
+                libros.forEach(libro => {
+                    if (filtroActual === 'textos' && libro.tipo === 'pdf') return;
+                    if (filtroActual === 'pdfs' && libro.tipo !== 'pdf') return;
+
+                    const card = document.createElement('div');
+                    card.className = `book-card type-${libro.tipo}`;
+                    const icono = libro.tipo === 'pdf' ? '📕' : '📔';
+                    card.innerHTML = `<div class="book-icon">${icono}</div><div class="book-title">${libro.titulo}</div>`;
+                    card.onclick = () => abrirModal(libro);
+                    contenedor.appendChild(card);
+                });
+            };
+        }
+
+        async function descargarZIP() {
+            const zip = new JSZip();
+            db.transaction(["libros"], "readonly").objectStore("libros").getAll().onsuccess = e => {
+                const libros = e.target.result;
+                if(libros.length === 0) return alert("No hay archivos para respaldar.");
+                libros.forEach(l => {
+                    zip.file(`${l.titulo}.${l.extensionOriginal}`, l.data);
+                });
+                zip.generateAsync({type:"blob"}).then(function(content) {
+                    saveAs(content, "Respaldo_Cahoba.zip");
+                });
+            };
+        }
+
+        let libroSeleccionado = null;
+        function abrirModal(libro) {
+            libroSeleccionado = libro;
+            document.getElementById('modal-book-title').innerText = libro.titulo;
+            document.getElementById('action-modal').style.display = 'flex';
+        }
+
+        function closeModal(e) {
+            if(e && e.target !== document.getElementById('action-modal')) return;
+            document.getElementById('action-modal').style.display = 'none';
+        }
+
+        function borrarLibro() {
+            if(confirm("¿Segura que deseas destruir este documento?")) {
+                db.transaction(["libros"], "readwrite").objectStore("libros").delete(libroSeleccionado.id).oncomplete = () => { 
+                    closeModal(); mostrarLibros(); 
+                };
+            }
+        }
+
+        // --- MOTOR 3D Y RADAR DE TAMAÑO ---
+        let flipBookInstance = null;
+        let isMobile = window.innerWidth <= 800;
+        let currentBookWidth = 450; 
+        let currentBookHeight = 600;
+
+        // Función que actúa como Lupa para agrandar el libro
+        function redimensionarLibro() {
+            if (!flipBookInstance) return;
+            
+            const workspace = document.querySelector('.reader-workspace');
+            const padding = 40; // Espacio para que el libro no pegue de los bordes
+            const disponibleW = workspace.clientWidth - padding;
+            const disponibleH = workspace.clientHeight - padding;
+            
+            let anchoTotalLibro = isMobile ? currentBookWidth : (currentBookWidth * 2);
+            let altoTotalLibro = currentBookHeight;
+            
+            // Calculamos el zoom perfecto
+            let scale = Math.min(disponibleW / anchoTotalLibro, disponibleH / altoTotalLibro);
+            
+            // Si la pantalla es gigante, no dejamos que se vuelva absurdamente inmenso (límite de zoom x2)
+            if (scale > 2) scale = 2; 
+            
+            document.getElementById('flipbook').style.transform = `scale(${scale})`;
+        }
+
+        // Le avisamos a la página que ajuste la lupa cada vez que el tamaño cambia
+        window.addEventListener('resize', () => { 
+            isMobile = window.innerWidth <= 800; 
+            redimensionarLibro(); 
+        });
+
+        async function startReading() {
+            closeModal();
+            document.getElementById('reader-view').style.display = 'flex';
+            document.getElementById('reader-title').innerText = libroSeleccionado.titulo;
+            
+            const flipbookDOM = document.getElementById('flipbook');
+            const loader = document.getElementById('loader');
+            
+            flipbookDOM.style.display = 'none';
+            flipbookDOM.innerHTML = ''; 
+            loader.style.display = 'block';
+            
+            // Valores por defecto
+            currentBookWidth = 450; 
+            currentBookHeight = 600;
+
+            try {
+                if (libroSeleccionado.tipo === 'texto') {
+                    let rawText = libroSeleccionado.data || "Archivo vacío.";
+                    let words = rawText.split(/\s+/);
+                    let pages = [];
+                    let currentPage = "";
+                    
+                    for (let w of words) {
+                        if (currentPage.length + w.length > 800) {
+                            pages.push(currentPage);
+                            currentPage = w + " ";
+                        } else {
+                            currentPage += w + " ";
+                        }
+                    }
+                    if (currentPage.trim().length > 0) pages.push(currentPage);
+
+                    while(pages.length < 4) pages.push("");
+                    if (pages.length % 2 !== 0) pages.push("");
+
+                    pages.forEach(txt => {
+                        const div = document.createElement('div'); div.className = 'page page-text';
+                        div.innerHTML = marked.parse(txt);
+                        flipbookDOM.appendChild(div);
+                    });
+
+                } else if (libroSeleccionado.tipo === 'pdf') {
+                    const typedarray = new Uint8Array(libroSeleccionado.data);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    
+                    const firstPage = await pdf.getPage(1);
+                    const viewportDemo = firstPage.getViewport({ scale: 1 });
+                    if (viewportDemo.width > viewportDemo.height) {
+                        currentBookWidth = 600; 
+                        currentBookHeight = 400; 
+                    }
+
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height; canvas.width = viewport.width;
+                        
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        
+                        const div = document.createElement('div'); div.className = 'page page-pdf';
+                        div.innerHTML = `<img src="${canvas.toDataURL('image/jpeg', 0.8)}" class="pdf-img">`;
+                        flipbookDOM.appendChild(div);
+                    }
+                    if (pdf.numPages % 2 !== 0) {
+                        const div = document.createElement('div'); div.className = 'page';
+                        flipbookDOM.appendChild(div);
+                    }
+                }
+
+                loader.style.display = 'none';
+                flipbookDOM.style.display = 'block';
+
+                flipBookInstance = new St.PageFlip(flipbookDOM, {
+                    width: currentBookWidth, height: currentBookHeight, size: "fixed",    
+                    showCover: false, maxShadowOpacity: 0.4, usePortrait: isMobile
+                });
+
+                flipBookInstance.loadFromHTML(flipbookDOM.querySelectorAll('.page'));
+                
+                // Aplicamos el zoom la primera vez que se abre el libro
+                redimensionarLibro();
+
+            } catch (error) {
+                console.error(error);
+                loader.innerText = "Error cargando archivo.";
+            }
+        }
+
+        function cerrarLibro() {
+            if(document.fullscreenElement) document.exitFullscreen();
+            document.getElementById('reader-view').style.display = 'none';
+            if(flipBookInstance) { flipBookInstance.destroy(); flipBookInstance = null; }
+        }
+    </script>
+</body>
+</html>
