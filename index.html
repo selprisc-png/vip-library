@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CAHÓBA Cátedras VIP</title>
     
-    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0b0510">
     
-    <!-- Librerías de Texto, PDF, 3D y ZIP -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.js"></script>
@@ -16,7 +14,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <style>
-        /* TEMA EJECUTIVO GLAMUROSO (VIOLETA PROFUNDO Y ORO) */
         :root {
             --bg-app: #0b0510;      
             --accent-main: #d4af37; 
@@ -117,7 +114,6 @@
         .btn-delete { background-color: transparent; color: #d9534f; border: 1px solid #d9534f; }
         .btn-delete:hover { background-color: rgba(217, 83, 79, 0.1); }
 
-        /* --- LECTOR 3D Y PANTALLA COMPLETA --- */
         #reader-view {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: rgba(5, 2, 8, 0.98); z-index: 1000;
@@ -135,9 +131,6 @@
         
         .theme-controls { display: flex; gap: 8px; align-items: center; border-right: 1px solid #3a1e54; padding-right: 15px; }
         .theme-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #5a327d; cursor: pointer; }
-        .theme-btn.claro { background-color: #ffffff; }
-        .theme-btn.sepia { background-color: #fdf6e3; }
-        .theme-btn.violeta { background-color: #1d0f2b; border-color: var(--accent-main); }
 
         .btn-icon { background: transparent; border: none; color: #e0d5f5; font-size: 20px; cursor: pointer; padding: 0 5px; }
         .btn-icon:hover { color: var(--accent-main); }
@@ -154,12 +147,11 @@
             width: 100%; height: 100%; user-select: none; 
         }
         
-        /* LA MAGIA DEL TAMAÑO OCURRE AQUÍ */
         .flipbook { 
             display: none; 
             box-shadow: 0 20px 60px rgba(0,0,0,0.9); 
-            transform-origin: center center; /* Se ancla al centro para crecer */
-            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Animación fluida de lupa */
+            transform-origin: center center;
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         #reader-view[data-read-theme="claro"] .page { background-color: #ffffff; color: #111111; }
@@ -221,7 +213,6 @@
         <div class="grid-shelf" id="library-container"></div>
     </div>
 
-    <!-- MODAL -->
     <div class="modal-overlay" id="action-modal" onclick="closeModal(event)">
         <div class="action-modal" onclick="event.stopPropagation()">
             <h3 id="modal-book-title">Título</h3>
@@ -230,16 +221,18 @@
         </div>
     </div>
 
-    <!-- LECTOR -->
     <div id="reader-view" data-read-theme="violeta">
         <div class="reader-header">
             <div class="reader-title" id="reader-title">Título del Libro</div>
             <div class="reader-controls">
+                
+                <!-- BOTONES CORREGIDOS -->
                 <div class="theme-controls">
-                    <button class="theme-btn claro" onclick="setTheme('claro')" title="Claro"></button>
-                    <button class="theme-btn sepia" onclick="setTheme('sepia')" title="Sepia"></button>
-                    <button class="theme-btn violeta" onclick="setTheme('violeta')" title="Violeta Ejecutivo"></button>
+                    <button class="theme-btn claro" onclick="setTheme('claro')" title="Claro" style="background-color: #ffffff;"></button>
+                    <button class="theme-btn sepia" onclick="setTheme('sepia')" title="Sepia" style="background-color: #fdf6e3;"></button>
+                    <button class="theme-btn violeta" onclick="setTheme('violeta')" title="Violeta Ejecutivo" style="background-color: #1d0f2b; border: 2px solid #d4af37;"></button>
                 </div>
+
                 <button class="btn-icon" onclick="toggleFullScreen()" title="Pantalla Completa">⛶</button>
                 <button class="btn-close" onclick="cerrarLibro()">✖ Cerrar</button>
             </div>
@@ -262,7 +255,6 @@
             localStorage.setItem('cahoba_theme_vip', theme);
         }
 
-        // CONTROL PANTALLA COMPLETA
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -271,7 +263,6 @@
             }
         }
 
-        // BASE DE DATOS
         let db;
         const dbRequest = indexedDB.open("CahobaVIP_DB", 3); 
         dbRequest.onupgradeneeded = e => {
@@ -367,34 +358,27 @@
             }
         }
 
-        // --- MOTOR 3D Y RADAR DE TAMAÑO ---
         let flipBookInstance = null;
         let isMobile = window.innerWidth <= 800;
         let currentBookWidth = 450; 
         let currentBookHeight = 600;
 
-        // Función que actúa como Lupa para agrandar el libro
         function redimensionarLibro() {
             if (!flipBookInstance) return;
-            
             const workspace = document.querySelector('.reader-workspace');
-            const padding = 40; // Espacio para que el libro no pegue de los bordes
+            const padding = 40; 
             const disponibleW = workspace.clientWidth - padding;
             const disponibleH = workspace.clientHeight - padding;
             
             let anchoTotalLibro = isMobile ? currentBookWidth : (currentBookWidth * 2);
             let altoTotalLibro = currentBookHeight;
             
-            // Calculamos el zoom perfecto
             let scale = Math.min(disponibleW / anchoTotalLibro, disponibleH / altoTotalLibro);
-            
-            // Si la pantalla es gigante, no dejamos que se vuelva absurdamente inmenso (límite de zoom x2)
             if (scale > 2) scale = 2; 
             
             document.getElementById('flipbook').style.transform = `scale(${scale})`;
         }
 
-        // Le avisamos a la página que ajuste la lupa cada vez que el tamaño cambia
         window.addEventListener('resize', () => { 
             isMobile = window.innerWidth <= 800; 
             redimensionarLibro(); 
@@ -412,7 +396,6 @@
             flipbookDOM.innerHTML = ''; 
             loader.style.display = 'block';
             
-            // Valores por defecto
             currentBookWidth = 450; 
             currentBookHeight = 600;
 
@@ -482,8 +465,6 @@
                 });
 
                 flipBookInstance.loadFromHTML(flipbookDOM.querySelectorAll('.page'));
-                
-                // Aplicamos el zoom la primera vez que se abre el libro
                 redimensionarLibro();
 
             } catch (error) {
