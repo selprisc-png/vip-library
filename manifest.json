@@ -1,23 +1,11 @@
 {
-  "name": "CAHÓBA Cátedras",
-  "short_name": "Cahoba",
-  "description": "Mi Biblioteca PWA con efecto de vuelta de página 3D realista.",
-  "start_url": "index.html",
+  "name": "CAHÓBA VIP",
+  "short_name": "VIP-Library",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#1a120b",
-  "theme-color": "#1a120b",
-  "orientation": "any",
+  "background_color": "#0b0510",
+  "theme_color": "#0b0510",
   "icons": [
-    {
-      "src": "libro_16x16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
-    {
-      "src": "libro_32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
     {
       "src": "libro_48x48.png",
       "sizes": "48x48",
