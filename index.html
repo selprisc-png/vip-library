@@ -85,7 +85,7 @@
         .book-card:hover { transform: translateY(-10px); border-color: var(--accent-main); }
         .book-card.type-pdf { background-color: #4a1c38; border-left-color: #260a1a; }
 
-        .book-icon { font-size: 42px; margin-bottom: 12px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .book-icon { width: 42px; height: 42px; color: #d4af37; margin-bottom: 12px; }
         .book-title { 
             font-size: 13px; text-align: center; color: #f0e6d2; 
             font-family: 'Segoe UI', sans-serif; font-weight: bold;
@@ -226,7 +226,6 @@
             <div class="reader-title" id="reader-title">Título del Libro</div>
             <div class="reader-controls">
                 
-                <!-- BOTONES CORREGIDOS -->
                 <div class="theme-controls">
                     <button class="theme-btn claro" onclick="setTheme('claro')" title="Claro" style="background-color: #ffffff;"></button>
                     <button class="theme-btn sepia" onclick="setTheme('sepia')" title="Sepia" style="background-color: #fdf6e3;"></button>
@@ -247,6 +246,10 @@
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // Iconos SVG (la solución infalible)
+        const svgLibro = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
+        const svgCuaderno = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h13.5a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1z"></path><path d="M9 2v20"></path></svg>`;
 
         const savedTheme = localStorage.getItem('cahoba_theme_vip') || 'violeta';
         document.getElementById('reader-view').setAttribute('data-read-theme', savedTheme);
@@ -316,8 +319,8 @@
 
                     const card = document.createElement('div');
                     card.className = `book-card type-${libro.tipo}`;
-                    const icono = libro.tipo === 'pdf' ? '📕' : '📔';
-                    card.innerHTML = `<div class="book-icon">${icono}</div><div class="book-title">${libro.titulo}</div>`;
+                    const iconoSVG = libro.tipo === 'pdf' ? svgLibro : svgCuaderno;
+                    card.innerHTML = `<div class="book-icon">${iconoSVG}</div><div class="book-title">${libro.titulo}</div>`;
                     card.onclick = () => abrirModal(libro);
                     contenedor.appendChild(card);
                 });
