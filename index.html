@@ -127,9 +127,12 @@
         }
         .reader-title { color: var(--accent-main); font-weight: bold; font-size: 18px; letter-spacing: 1px; }
         
-        .reader-controls { display: flex; gap: 15px; align-items: center; }
+        .reader-controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center; }
         
+        /* Controles añadidos para el Zoom y Temas */
+        .zoom-controls { display: flex; gap: 8px; align-items: center; border-right: 1px solid #3a1e54; padding-right: 15px; }
         .theme-controls { display: flex; gap: 8px; align-items: center; border-right: 1px solid #3a1e54; padding-right: 15px; }
+        
         .theme-btn { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #5a327d; cursor: pointer; }
 
         .btn-icon { background: transparent; border: none; color: #e0d5f5; font-size: 20px; cursor: pointer; padding: 0 5px; }
@@ -139,12 +142,14 @@
 
         .reader-workspace {
             flex-grow: 1; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative;
+            overflow: auto; /* IMPORTANTE: Permite hacer scroll al acercar */
+            position: relative;
         }
 
         .flipbook-viewport { 
             display: flex; justify-content: center; align-items: center; 
             width: 100%; height: 100%; user-select: none; 
+            min-width: min-content; min-height: min-content; padding: 20px; box-sizing: border-box;
         }
         
         .flipbook { 
@@ -152,6 +157,7 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.9); 
             transform-origin: center center;
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            margin: auto;
         }
 
         #reader-view[data-read-theme="claro"] .page { background-color: #ffffff; color: #111111; }
@@ -177,12 +183,12 @@
         }
         #reader-view[data-read-theme="violeta"] .pdf-img { filter: invert(0.85) hue-rotate(220deg); mix-blend-mode: normal; }
 
-        #loader { display: none; position: absolute; color: var(--accent-main); font-family: 'Segoe UI', sans-serif; font-weight: bold; font-size: 18px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+        #loader { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-main); font-family: 'Segoe UI', sans-serif; font-weight: bold; font-size: 18px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); z-index: 2000; }
         
         @media (max-width: 800px) { 
             .btn-action span { display: none; } 
             .reader-header { flex-direction: column; gap: 15px; }
-            .theme-controls { border-right: none; padding-right: 0; }
+            .zoom-controls, .theme-controls { border-right: none; padding-right: 0; }
         }
     </style>
 </head>
@@ -226,6 +232,13 @@
             <div class="reader-title" id="reader-title">Título del Libro</div>
             <div class="reader-controls">
                 
+                <!-- BOTONES DE ZOOM -->
+                <div class="zoom-controls">
+                    <button class="btn-icon" onclick="zoomOut()" title="Alejar">➖</button>
+                    <button class="btn-icon" onclick="resetZoom()" title="Restaurar Zoom">🔍</button>
+                    <button class="btn-icon" onclick="zoomIn()" title="Acercar">➕</button>
+                </div>
+
                 <div class="theme-controls">
                     <button class="theme-btn claro" onclick="setTheme('claro')" title="Claro" style="background-color: #ffffff;"></button>
                     <button class="theme-btn sepia" onclick="setTheme('sepia')" title="Sepia" style="background-color: #fdf6e3;"></button>
@@ -247,7 +260,6 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        // Iconos SVG (la solución infalible)
         const svgLibro = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
         const svgCuaderno = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h13.5a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1z"></path><path d="M9 2v20"></path></svg>`;
 
@@ -365,10 +377,28 @@
         let isMobile = window.innerWidth <= 800;
         let currentBookWidth = 450; 
         let currentBookHeight = 600;
+        
+        // VARIABLE PARA EL NIVEL DE ZOOM
+        let userZoom = 1;
+
+        // FUNCIONES DE ZOOM
+        function zoomIn() { 
+            userZoom += 0.3; 
+            redimensionarLibro(); 
+        }
+        function zoomOut() { 
+            userZoom = Math.max(0.5, userZoom - 0.3); // Para que no se haga microscópico
+            redimensionarLibro(); 
+        }
+        function resetZoom() { 
+            userZoom = 1; 
+            redimensionarLibro(); 
+        }
 
         function redimensionarLibro() {
             if (!flipBookInstance) return;
             const workspace = document.querySelector('.reader-workspace');
+            const flipbookDOM = document.getElementById('flipbook');
             const padding = 40; 
             const disponibleW = workspace.clientWidth - padding;
             const disponibleH = workspace.clientHeight - padding;
@@ -376,10 +406,24 @@
             let anchoTotalLibro = isMobile ? currentBookWidth : (currentBookWidth * 2);
             let altoTotalLibro = currentBookHeight;
             
-            let scale = Math.min(disponibleW / anchoTotalLibro, disponibleH / altoTotalLibro);
-            if (scale > 2) scale = 2; 
+            let baseScale = Math.min(disponibleW / anchoTotalLibro, disponibleH / altoTotalLibro);
+            if (baseScale > 2) baseScale = 2; 
             
-            document.getElementById('flipbook').style.transform = `scale(${scale})`;
+            // Aplicar el factor de zoom del usuario
+            const finalScale = baseScale * userZoom;
+            
+            flipbookDOM.style.transform = `scale(${finalScale})`;
+
+            // Ajustar el comportamiento del espacio de trabajo al hacer zoom para permitir el arrastre (scroll)
+            if (userZoom > 1) {
+                flipbookDOM.style.transformOrigin = "top left";
+                workspace.style.alignItems = "flex-start";
+                workspace.style.justifyContent = "flex-start";
+            } else {
+                flipbookDOM.style.transformOrigin = "center center";
+                workspace.style.alignItems = "center";
+                workspace.style.justifyContent = "center";
+            }
         }
 
         window.addEventListener('resize', () => { 
@@ -389,6 +433,8 @@
 
         async function startReading() {
             closeModal();
+            userZoom = 1; // Reiniciar el zoom al abrir un libro nuevo
+            
             document.getElementById('reader-view').style.display = 'flex';
             document.getElementById('reader-title').innerText = libroSeleccionado.titulo;
             
